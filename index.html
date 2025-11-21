@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Cerdas Cermat — Sirah Nabawiyah</title>
+<style>
+
+  :root{--bg:#f7f9fc;--card:#fff;--accent:#0b63d6;--muted:#6b7280}
+  body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial;margin:0;background:var(--bg);color:#111}
+  
+  /* === DARK MODE STYLES === */
+  .dark-mode{background:#111;color:#f7f9fc}
+  .dark-mode .wrap{max-width:980px;margin:28px auto;padding:20px}
+  .dark-mode .card{background:#1e293b;border-radius:12px;padding:18px;box-shadow:0 6px 24px rgba(0,0,0,0.4); color: #f7f9fc;}
+  .dark-mode .quiz-area{display:flex;gap:18px;margin-top:18px}
+  .dark-mode header{display:none;} /* Sembunyikan header (kontrol) saat dark mode/quiz berjalan */
+  .dark-mode h1{color:#f7f9fc;}
+  .dark-mode footer{display:none;} /* Sembunyikan footer saat dark mode/quiz berjalan */
+
+  /* Sesuaikan elemen di dalam quiz area */
+  .dark-mode .opt{background:#334155;border:1px solid #475569;color:#93c5fd;font-size:17px;font-weight:600;text-align:left}
+  .dark-mode .opt.correct{border-color:#22c55e;background:#166534}
+  .dark-mode .opt.wrong{border-color:#f43f5e;background:#9f1239}
+  .dark-mode .btn-muted{background:#334155;color:#93c5fd}
+  .dark-mode .score-box{background:#1e293b;border:1px solid #334155;color:#f7f9fc}
+  .dark-mode table{color:#f7f9fc}
+  .dark-mode th, .dark-mode td{border-bottom:1px solid #334155}
+  
+  /* Override styles untuk elemen umum */
+  .wrap{max-width:980px;margin:28px auto;padding:20px}
+  .card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 6px 24px rgba(12,47,88,0.06)}
+  header{display:flex;gap:16px;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap}
+  h1{font-size:20px;margin:0}
+  .controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+  input[type=number]{width:84px;padding:6px;border-radius:8px;border:1px solid #ddd}
+  button{background:var(--accent);color:white;padding:8px 12px;border-radius:8px;border:none;cursor:pointer}
+  button:disabled{opacity: 0.7; cursor: not-allowed;} /* Tambahkan style disabled */
+  label.small{display:flex;align-items:center;gap:6px;font-weight:600;}
+  .meta{display:flex;gap:12px;align-items:center;font-size:14px;color:var(--muted);flex-wrap:wrap;}
+  .quiz-area{display:flex;gap:18px;margin-top:18px}
+  .left{flex:1}
+  .question{font-weight:600;margin-bottom:8px;font-size:20px}
+  .options{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .opt{background:#fafafa;padding:16px;border-radius:8px;border:1px solid #e6eefc;cursor:pointer;color:#015825;font-size:17px;font-weight:600;text-align:left}
+  .opt.disabled{opacity:.6;cursor:not-allowed}
+  .opt.correct{border-color:#16a34a;background:#ecfdf5}
+  .opt.wrong{border-color:#dc2626;background:#fff1f2}
+  .timer{font-size:28px;font-weight:700;color:var(--accent)}
+  .progress{height:10px;background:#e6eefc;border-radius:999px;overflow:hidden;margin-top:10px}
+  .bar{height:100%;background:linear-gradient(90deg,var(--accent),#3aa0ff);width:0%}
+  .right{width:270px}
+  .score-box{background:#fbfbff;padding:12px;border-radius:8px;border:1px solid #eef2ff;text-align:center}
+  .score-big{font-size:36px;font-weight:800;color:#0b63d6}
+  .small{font-size:13px;color:var(--muted)}
+  table{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
+  th,td{padding:8px;border-bottom:1px solid #f1f5f9;text-align:left}
+  .end-card{margin-top:16px;padding:12px;border-radius:8px;background:#fff}
+  .btn-muted{background:#eef2ff;color:var(--accent);border:none;padding:8px 10px;border-radius:8px;cursor:pointer}
+  footer{margin-top:18px;font-size:13px;color:var(--muted)}
+  /* modal */
+  .modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);z-index:60}
+  .modal.hidden{display:none}
+  .modal-box{background:#fff;padding:18px;border-radius:10px;width:320px;box-shadow:0 8px 30px rgba(2,6,23,0.2)}
+  .modal-box input{width:100%;padding:8px;border-radius:8px;border:1px solid #ddd;margin-top:8px}
+  /* Style tambahan untuk modal di dark mode */
+  .dark-mode .modal-box{background:#1e293b; color:#f7f9fc;}
+
+  @media(max-width:880px){
+    .quiz-area{flex-direction:column}
+    .right{width:100%}
+    .options{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body id="bodyTag">
+  <div class="wrap">
+    <div class="card">
+      <header id="quizHeader">
+        <div style="flex:1; min-width: 280px;">
+          <h1>Cerdas Cermat — Sirah Nabawiyah (<span id="totalSoalCount">0</span> Soal)</h1>
+          <div class="meta">
+            
+          </div>
+        </div>
+
+        <div class="controls" style="flex-direction: column; align-items: flex-start;">
+          <label class="small">Durasi per soal (detik):
+            <input id="durationInput" type="number" min="5" step="1" value="60" />
+          </label>
+
+          <label class="small">Jumlah soal (1–100):
+            <input id="jumlahSoalInput" type="number" min="1" max="100" step="1" value="100" />
+          </label>
+
+          <label class="small" style="margin-top:8px;">Pilih materi soal:</label>
+          <div id="materiCheckboxes" style="display:flex;gap:10px;flex-wrap:wrap;max-width:360px">
+            <label><input type="checkbox" value="sebelum_kelahiran" checked> Sebelum Kelahiran</label>
+            <label><input type="checkbox" value="masa_muda" checked> Masa Muda</label>
+            <label><input type="checkbox" value="turunnya_wahyu" checked> Turunnya Wahyu</label>
+            <label><input type="checkbox" value="periode_madinah" checked> Periode Madinah</label>
+            <label><input type="checkbox" value="tahun_akhir" checked> Tahun Akhir</label>
+            <label><input type="checkbox" value="semua_materi" checked> semua_materi</label>
+          </div>
+
+          <div style="margin-top:10px; display:flex; gap:8px; align-items:center; flex-wrap: wrap;">
+            <button id="startBtn">Mulai Quiz (Biasa)</button>
+            <button id="startFormQuizBtn" style="background: #22c55e;">Mulai Quiz (Ranked)</button>
+            <button id="rankingBtn" class="btn-muted" style="margin-left:8px">Lihat Ranking</button>
+            <button id="stopBtn" class="btn-muted" style="display:none">Berhenti</button>
+          </div>
+        </div>
+      </header>
+
+      <div class="quiz-area">
+        <div class="left">
+          <div id="qCard" class="card" style="display:none">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div class="small">Soal <span id="qIndex">0</span> / <span id="maxSoalCount">0</span></div>
+                <div id="questionText" class="question">Tekan "Mulai Quiz" untuk memulai.</div>
+              </div>
+              <div style="text-align:right">
+                <div class="timer" id="timeLeft">--</div>
+                <div class="small">Detik tersisa</div>
+              </div>
+            </div>
+
+            <div class="progress"><div class="bar" id="progressBar"></div></div>
+
+            <div id="options" class="options" style="margin-top:12px"></div>
+
+            <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+              <button id="prevQ" class="btn-muted" disabled> SELESAI</button>
+              <button id="skipQ" class="btn-muted" disabled>Skip</button>
+              <button id="nextBtn" class="btn-muted" disabled>Lanjut</button>
+              <div class="small">Status: <span id="status">Belum mulai</span></div>
+            </div>
+          </div>
+
+          <div id="endSummary" class="end-card" style="display:none">
+            <h3>Hasil Quiz</h3>
+            <div style="margin-bottom:8px">Nama Peserta: <b id="playerName">-</b></div>
+
+            <div style="display:flex;gap:12px;align-items:center">
+              <div style="flex:1">
+                <div class="small">Skor akhir</div>
+                <div class="score-big" id="finalScore">0</div>
+                <div class="small" id="correctCount">Benar: 0 | Salah: 0 | Total Soal: 0</div>
+                <div style="margin-top:6px;font-size:14px">Rata-rata waktu: <b id="finalAvgTime">-</b> detik</div>
+              </div>
+
+              <div style="width:360px">
+                <button id="retryBtn" class="btn-muted">Main Lagi</button>
+                <button id="exportBtn" class="btn-muted" style="margin-left:8px">Ekspor CSV</button>
+                <button id="sendFormBtn" class="btn-muted" style="margin-left:8px">Kirim data skor (dengan jujur)</button>
+                
+
+              </div>
+            </div>
+
+            <div id="detailTableWrap" style="margin-top:12px;max-height:320px;overflow:auto">
+              <table id="detailTable">
+                <thead><tr><th>No</th><th>Pilihan</th><th>Jawaban</th><th>Waktu(s)</th><th>Nilai</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="right">
+          <div class="score-box">
+            <div class="small">Skor sementara</div>
+            <div class="score-big" id="score">0</div>
+            <div class="small" style="margin-top:6px">Soal terjawab: <span id="answeredCount">0</span> / <span id="maxSoalCountRight">0</span></div>
+          </div>
+
+          <div style="margin-top:12px" class="card">
+            <div class="small">Ringkasan</div>
+            <table>
+              <tr><td>Benar</td><td id="rightCount">0</td></tr>
+              <tr><td>Salah</td><td id="wrongCount">0</td></tr>
+              <tr><td>Rata-rata waktu (detik)</td><td id="avgTime">-</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <footer id="quizFooter">Desain sederhana — jawab dengan mengklik pilihan. Timer berhenti otomatis ketika memilih jawaban.</footer>
+    </div>
+  </div>
+
+  <div id="nameModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-box">
+      <div style="font-weight:700">Selesai — Masukkan nama Anda</div>
+      <input id="userNameInput" type="text" placeholder="Nama lengkap atau singkatan" />
+      <div id="nameModalControls" style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+        <button id="cancelNameBtn" class="btn-muted">Batal</button>
+        <button id="saveNameBtn" disabled>Simpan</button>
+      </div>
+    </div>
+  </div>
+  
+  <div id="timeUpModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-box">
+      <div style="font-weight:700; font-size: 18px; color: #dc2626; margin-bottom: 10px;">⏰ Waktu Habis!</div>
+      <div style="margin-top: 5px;">Waktu untuk soal nomor <b id="timeUpQIndex">-</b> telah berakhir. Jawaban akan dianggap **Salah**.</div>
+      <div style="display:flex;justify-content:flex-end;margin-top:20px">
+        <button id="continueTimeUpBtn">Lanjutkan</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="exportSuccessModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-box" style="width:360px; text-align: center;">
+      <h3 style="margin-top:0; color: #10b981;">✅ Quiz Selesai!</h3>
+      <p>Skor Anda telah dicatat. Selanjutnya, silakan kirimkan data skor ini untuk rekapan akhir.</p>
+      
+      <div style="margin-top: 20px;">
+        <button id="sendFormModalBtn" style="background: #0b63d6; color: white; padding: 10px 18px; font-size: 16px;">
+          Kirim data skor (dengan jujur)
+        </button>
+      </div>
+      
+      <button id="closeExportModalBtn" class="btn-muted" style="margin-top: 15px; display: none;">
+        Tutup
+      </button>
+    </div>
+  </div>
+
+
+<script>
+const QUESTIONS = 
+[
+  {
+    q: "Ketika Nabi Muhammad ﷺ masih berada dalam kandungan ibunya, siapakah sosok ayah yang telah lebih dahulu berpulang sebelum sempat melihat kelahiran beliau?",
+    opts: ["A. Abdul Muththalib","B. Abu Thalib","C. Abdullah","D. Abdi Manaf"],
+    answer: "C",
+    kategori: "semua_materi"
+  },
+  {
+    q: "Dalam garis keturunan para nabi, Rasulullah ﷺ berada dalam jalur keturunan siapakah yang bersambung melalui nasab Adnan?",
+    opts: ["A. Nabi Musa ‘alaihis-salam","B. Nabi Ishaq ‘alaihis-salam","C. Nabi Ismail ‘alaihis-salam","D. Nabi Ya’qub ‘alaihis-salam"],
+    answer: "C",
+    kategori: "semua_materi"
+  },
+  {
+    q: "Pada tahun kelahiran Nabi ﷺ, terjadi sebuah peristiwa dahsyat yang mengguncang Jazirah Arab hingga dikenal sebagai ‘Amul Fîl. Peristiwa apakah itu?",
+    opts: ["A. Perang Fijar","B. Wafatnya Abdul Muththalib","C. Serangan pasukan bergajah Abraha menuju Ka’bah","D. Perjanjian Hudaibiyah"],
+    answer: "C",
+    kategori: "semua_materi"
+  },
+  {
+    q: "Di masa awal kehidupannya, Nabi ﷺ disusui oleh seorang wanita luhur dari Bani Sa‘d yang kemudian sangat dicintai beliau. Siapakah wanita itu?",
+    opts: ["A. Khadijah as-Sa’diyah","B. Barakah (Ummu Aiman)","C. Aminah binti Wahb","D. Halimah as-Sa’diyah"],
+    answer: "D",
+    kategori: "semua_materi"
+  },
+  {
+    q: "Peristiwa pembelahan dada Nabi ﷺ—sebuah mukjizat yang menguatkan hati beliau—terjadi saat beliau diasuh di perkampungan Bani Sa’d. Ketika itu usia beliau sekitar…",
+    opts: ["A. 2 tahun","B. 4 tahun","C. 6 tahun","D. 8 tahun"],
+    answer: "B",
+    kategori: "semua_materi"
+  },
+  {
+    q: "Setelah wafatnya kakek beliau, Nabi Muhammad ﷺ dirawat oleh pamannya yang penuh kasih dan selalu membela beliau dari gangguan Quraisy. Siapakah paman tersebut?",
+    opts: ["A. Abu Lahab","B. Hamzah","C. Abu Thalib","D. Al-Abbas"],
+    answer: "C",
+    kategori: "semua_materi"
+  },
+  {
+    q: "Sebelum diangkat sebagai nabi, masyarakat Makkah telah lama mengenal Muhammad ﷺ dengan sebuah gelar yang menunjukkan integritas dan amanah beliau. Gelar itu adalah…",
+    opts: ["A. As-Siddiq","B. Al-Faruq","C. Al-Amîn","D. Sayyidul Basyar"],
+    answer: "C",
+    kategori: "semua_materi"
+  },
+  {
+    q: "Pada usia 25 tahun, Rasulullah ﷺ menikahi seorang wanita mulia Quraisy yang terkenal bijaksana serta dermawan. Siapakah wanita yang menjadi pendamping beliau itu?",
+    opts: ["A. Fatimah binti Khuwailid","B. Aisyah binti Abu Bakar","C. Aminah binti Wahb","D. Khadijah binti Khuwailid"],
+    answer: "D",
+    kategori: "semua_materi"
+  },
+  {
+    q: "Dari putri-putri Rasulullah ﷺ, ada satu yang menjadi penerus keturunan beliau hingga hari ini. Siapakah putri tersebut?",
+    opts: ["A. Zainab","B. Fatimah az-Zahra","C. Ruqayyah","D. Ummu Kultsum"],
+    answer: "B",
+    kategori: "semua_materi"
+  },
+  {
+    q: "Saat memasuki usia matang dan penuh kedewasaan, Rasulullah ﷺ menerima wahyu pertama yang menandai dimulainya risalah kenabian. Ketika itu beliau berusia…",
+    opts: ["A. 35 tahun","B. 40 tahun","C. 50 tahun","D. 60 tahun"],
+    answer: "B",
+    kategori: "semua_materi"
+  },
+  {
+    q: "Gua Hira, tempat turunnya wahyu pertama kepada Nabi ﷺ, terletak di sebuah gunung yang terkenal di sekitar Makkah. Namanya adalah…",
+    opts: ["A. Jabal Tsur","B. Jabal Nur","C. Masjidil Haram","D. Bukit Shafa"],
+    answer: "B",
+    kategori: "semua_materi"
+  },
+  {
+    q: "Saat Malaikat Jibril datang membawa wahyu pertama, kalimat pembuka yang disampaikan kepada Nabi ﷺ berbunyi…",
+    opts: ["A. Yā ayyuhal muddatsir...","B. Iqra’ bismi rabbika alladzî khalaq...","C. Yā ayyuhā an-Nabiyy...","D. Allahu lā ilāha illā Huwal Hayyul Qayyum"],
+    answer: "B",
+    kategori: "semua_materi"
+  },
+  {
+    q: "Sebelum diperintahkan berdakwah secara terbuka, Rasulullah ﷺ menyampaikan ajaran Islam secara sembunyi-sembunyi selama kurang lebih…",
+    opts: ["A. 5 tahun","B. 10 tahun","C. 3 tahun","D. 7 tahun"],
+    answer: "C",
+    kategori: "semua_materi"
+  },
+  {
+    q: "Dari kalangan lelaki dewasa, siapakah orang pertama yang menyambut dakwah Nabi ﷺ dengan keimanan tanpa ada keraguan sedikit pun?",
+    opts: ["A. Ali bin Abi Thalib","B. Abu Bakar As-Siddiq","C. Zaid bin Haritsah","D. Hamzah bin Abdul Muththalib"],
+    answer: "B",
+    kategori: "semua_materi"
+  },
+  {
+    q: "Seorang wanita mulia menjadi korban penyiksaan Quraisy dan tercatat sebagai syahid pertama dalam Islam. Siapakah perempuan tersebut?",
+    opts: ["A. Asma binti Abu Bakar","B. Sumayyah binti Khayyat","C. Ummu Salamah","D. Fatimah binti Khattab"],
+    answer: "B",
+    kategori: "semua_materi"
+  },
+  {
+    q: "Setelah wafatnya Abu Thalib dan Khadijah RA, Nabi ﷺ mengalami masa duka yang mendalam. Tahun itu kemudian disebut…",
+    opts: ["A. Tahun Fathu Makkah","B. Tahun Gajah","C. ‘Amul Huzn (Tahun Kesedihan)","D. Tahun Bai’at Aqabah"],
+    answer: "C",
+    kategori: "semua_materi"
+  },
+  {
+    q: "Kota yang dahulu bernama Yatsrib berubah menjadi pusat cahaya Islam setelah Nabi ﷺ berhijrah ke sana. Kota itu kini dikenal sebagai…",
+    opts: ["A. Madinah al-Munawwarah","B. Thaif","C. Syam","D. Khaibar"],
+    answer: "A",
+    kategori: "semua_materi"
+  },
+  {
+    q: "Saat pertama kali tiba di Madinah, hal utama yang Rasulullah ﷺ bangun sebagai fondasi peradaban Islam adalah…",
+    opts: ["A. Pasar Madinah","B. Benteng pertahanan","C. Masjid Nabawi","D. Piagam Madinah"],
+    answer: "C",
+    kategori: "semua_materi"
+  },
+  {
+    q: "Pada tahun 6 H, Rasulullah ﷺ melakukan perjanjian dengan Quraisy yang semula tampak merugikan kaum Muslimin, namun kemudian dipahami sebagai kemenangan nyata. Perjanjian tersebut adalah…",
+    opts: ["A. Piagam Madinah","B. Perjanjian Khaibar","C. Hudaibiyah","D. Bai’at Aqabah"],
+    answer: "C",
+    kategori: "semua_materi"
+  },
+  {
+    q: "Dalam khutbah perpisahan, Rasulullah ﷺ mewasiatkan dua warisan agung agar umat beliau tidak tersesat selamanya. Dua warisan itu adalah…",
+    opts: ["A. Masjid Nabawi dan Rumah Beliau","B. Ahlul Bait dan Sahabat","C. Keadilan dan Kasih Sayang","D. Kitab Allah dan Sunnahku"],
+    answer: "D",
+    kategori: "semua_materi"
+  }
+]
+
+
+let durationPerQuestion = 60;
+let currentIndex = 0;
+let timer = null;
+let timeRemaining = 0;
+let quizStarted = false;
+let playerName = ""; // akan diisi setelah quiz selesai
+let isFormQuiz = false; // Flag baru untuk mode quiz kirim form
+
+
+const state = {
+  score: 0,
+  answered: 0,
+  right: 0,
+  wrong: 0,
+  details: [] // {i, selected, correct, timeUsed, points}
+};
+
+const el = {
+  bodyTag: document.getElementById('bodyTag'),
+  totalSoalCount: document.getElementById('totalSoalCount'),
+  qIndex: document.getElementById('qIndex'),
+  maxSoalCount: document.getElementById('maxSoalCount'),
+  maxSoalCountRight: document.getElementById('maxSoalCountRight'),
+  qCard: document.getElementById('qCard'),
+  questionText: document.getElementById('questionText'),
+  options: document.getElementById('options'),
+  timeLeft: document.getElementById('timeLeft'),
+  progressBar: document.getElementById('progressBar'),
+  score: document.getElementById('score'),
+  answeredCount: document.getElementById('answeredCount'),
+  rightCount: document.getElementById('rightCount'),
+  wrongCount: document.getElementById('wrongCount'),
+  avgTime: document.getElementById('avgTime'),
+  status: document.getElementById('status'),
+  startBtn: document.getElementById('startBtn'),
+  startFormQuizBtn: document.getElementById('startFormQuizBtn'), 
+  stopBtn: document.getElementById('stopBtn'),
+  durationInput: document.getElementById('durationInput'),
+  jumlahSoalInput: document.getElementById('jumlahSoalInput'),
+  prevQ: document.getElementById('prevQ'),
+  nextBtn: document.getElementById('nextBtn'),
+  skipQ: document.getElementById('skipQ'),
+  endSummary: document.getElementById('endSummary'),
+  finalScore: document.getElementById('finalScore'),
+  finalAvgTime: document.getElementById('finalAvgTime'),
+  playerName: document.getElementById('playerName'),
+  correctCount: document.getElementById('correctCount'),
+  detailTableBody: document.querySelector('#detailTable tbody'),
+  retryBtn: document.getElementById('retryBtn'),
+  exportBtn: document.getElementById('exportBtn'),
+  sendFormBtn: document.getElementById('sendFormBtn'),
+  nameModal: document.getElementById('nameModal'),
+  userNameInput: document.getElementById('userNameInput'),
+  saveNameBtn: document.getElementById('saveNameBtn'),
+  cancelNameBtn: document.getElementById('cancelNameBtn'),
+  timeUpModal: document.getElementById('timeUpModal'), 
+  continueTimeUpBtn: document.getElementById('continueTimeUpBtn'), 
+  timeUpQIndex: document.getElementById('timeUpQIndex'), 
+  quizHeader: document.getElementById('quizHeader'),
+  quizFooter: document.getElementById('quizFooter'),
+  
+  // ELEMEN BARU
+  exportSuccessModal: document.getElementById('exportSuccessModal'),
+  sendFormModalBtn: document.getElementById('sendFormModalBtn'),
+  closeExportModalBtn: document.getElementById('closeExportModalBtn'),
+};
+
+el.totalSoalCount.textContent = QUESTIONS.length;
+
+/* =========================
+   HELPER FUNCTIONS
+   ========================= */
+function clamp(n, lo, hi){ return Math.max(lo, Math.min(hi, n)); }
+function formatSec(n){ return (Math.round(n*100)/100).toFixed(2); }
+function computeAvgTime(){
+  if(state.details.length === 0) return '-';
+  const sum = state.details.reduce((s,d)=> s + (Number(d.timeUsed) || 0), 0);
+  return (sum / state.details.length).toFixed(2);
+}
+function escapeCsvCell(s){
+  if(s === null || s === undefined) return '';
+  const st = String(s);
+  if(st.includes(',') || st.includes('"') || st.includes('\n')){
+    return '"' + st.replace(/"/g,'""') + '"';
+  }
+  return st;
+}
+
+/* =========================
+   HELPER: SHUFFLE SOAL
+   ========================= */
+function shuffleArray(arr){
+  for(let i = arr.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+/* =========================
+   DARK MODE TOGGLE
+   ========================= */
+function setDarkMode(isDark){
+    if(isDark){
+        el.bodyTag.classList.add('dark-mode');
+        // El header dan footer sudah dihandle di CSS .dark-mode, tapi untuk jaga-jaga
+        el.quizHeader.style.display = 'none';
+        el.quizFooter.style.display = 'none';
+    } else {
+        el.bodyTag.classList.remove('dark-mode');
+        el.quizHeader.style.display = 'flex'; // Kembalikan display flex
+        el.quizFooter.style.display = 'block'; // Kembalikan display block
+    }
+}
+
+
+/* =========================
+   START / RESET
+   ========================= */
+let QUESTIONS_FOR_QUIZ = []; // akan diisi saat start
+
+// Menerima parameter untuk menentukan apakah ini Form Quiz
+function startQuiz(isFormMode = false){
+  if(quizStarted) return;
+  isFormQuiz = isFormMode; // Set flag mode quiz
+  
+  durationPerQuestion = clamp(Number(el.durationInput.value) || 60, 5, 9999);
+  const jumlahReq = clamp(Number(el.jumlahSoalInput.value) || QUESTIONS.length, 1, QUESTIONS.length);
+
+  // === Ambil kategori yang dipilih ===
+  const checkedMateri = Array.from(document.querySelectorAll('#materiCheckboxes input[type=checkbox]:checked'))
+    .map(i => i.value);
+
+  if(checkedMateri.length === 0){
+    alert('Pilih minimal satu kategori materi!');
+    return;
+  }
+
+  // === Filter berdasarkan kategori ===
+  const filtered = QUESTIONS.filter(q => checkedMateri.includes(q.kategori));
+
+  if(filtered.length === 0){
+    alert('Tidak ada soal untuk kategori yang dipilih.');
+    return;
+  }
+
+  // === ACak soal setelah difilter ===
+  const randomQuestions = shuffleArray([...filtered]);
+
+  // === Ambil sesuai jumlah soal yang diminta ===
+  QUESTIONS_FOR_QUIZ = randomQuestions.slice(0, jumlahReq);
+
+  // === RESET STATE ===
+  clearInterval(timer);
+  state.score = 0;
+  state.answered = 0;
+  state.right = 0;
+  state.wrong = 0;
+  state.details = [];
+  playerName = "";
+  el.userNameInput.value = "";
+  el.score.textContent = '0';
+  el.rightCount.textContent = '0';
+  el.wrongCount.textContent = '0';
+  el.answeredCount.textContent = '0';
+  el.avgTime.textContent = '-';
+  el.detailTableBody.innerHTML = '';
+  el.finalScore.textContent = '0';
+  el.finalAvgTime.textContent = '-';
+  el.playerName.textContent = '-';
+  el.exportSuccessModal.classList.add('hidden'); // Sembunyikan modal ekspor
+
+  // === SETUP MODAL NAMA (Hanya berlaku untuk mode Kirim Form) ===
+  if (isFormQuiz) {
+      el.cancelNameBtn.style.display = 'none'; // Sembunyikan tombol batal
+      el.saveNameBtn.disabled = true; // Nonaktifkan Simpan sampai input diisi
+  } else {
+      el.cancelNameBtn.style.display = 'inline-block'; // Tampilkan tombol batal
+      el.saveNameBtn.disabled = false; // Aktifkan Simpan (karena nama Peserta default diizinkan)
+  }
+
+  // === SET UI ===
+  setDarkMode(true); // Aktifkan Dark Mode
+  el.maxSoalCount.textContent = QUESTIONS_FOR_QUIZ.length;
+  el.maxSoalCountRight.textContent = QUESTIONS_FOR_QUIZ.length;
+  el.qCard.style.display = '';
+  el.endSummary.style.display = 'none';
+  el.status.textContent = 'Sedang berjalan';
+  el.startBtn.style.display = 'none';
+  el.startFormQuizBtn.style.display = 'none'; // Sembunyikan kedua tombol start
+  el.stopBtn.style.display = '';
+  el.nextBtn.disabled = true;
+  el.prevQ.disabled = true;
+  el.skipQ.disabled = false;
+
+  quizStarted = true;
+  currentIndex = 0;
+  showQuestion(0);
+}
+
+
+/* =========================
+   SHOW QUESTION
+   ========================= */
+function showQuestion(i){
+  clearInterval(timer);
+  if(i < 0) i = 0;
+  if(i >= QUESTIONS_FOR_QUIZ.length){
+    finishQuiz();
+    return;
+  }
+  currentIndex = i;
+  const Q = QUESTIONS_FOR_QUIZ[i];
+
+  el.qIndex.textContent = i+1;
+  el.questionText.textContent = Q.q;
+  el.options.innerHTML = '';
+
+  Q.opts.forEach((optText, idx)=>{
+    const letter = ['A','B','C','D'][idx] || String.fromCharCode(65+idx);
+    const btn = document.createElement('button');
+    btn.className = 'opt';
+    btn.dataset.letter = letter;
+    btn.type = 'button';
+    btn.innerHTML = `<div style="font-weight:700">${letter}.</div><div style="margin-top:6px">${optText.replace(/^[A-D]\.\s*/,'')}</div>`;
+    btn.onclick = ()=> selectOption(btn);
+    el.options.appendChild(btn);
+  });
+
+  timeRemaining = durationPerQuestion;
+  el.timeLeft.textContent = Math.ceil(timeRemaining);
+  el.progressBar.style.width = ((i) / QUESTIONS_FOR_QUIZ.length * 100) + '%';
+  el.nextBtn.disabled = true;
+  el.prevQ.disabled = (i === 0);
+  el.skipQ.disabled = false;
+
+  // interval tick
+  timer = setInterval(()=>{
+    timeRemaining -= 0.1;
+    if(timeRemaining <= 0){
+      clearInterval(timer);
+      timeRemaining = 0;
+      showTimeUpModal(); // Tampilkan modal
+    }
+    el.timeLeft.textContent = Math.ceil(timeRemaining);
+    // progress bar: show completed percent for this question
+    const per = ( (durationPerQuestion - timeRemaining) / durationPerQuestion ) * 100;
+    el.progressBar.style.width = ( ((currentIndex) / QUESTIONS_FOR_QUIZ.length * 100) + (per/QUESTIONS_FOR_QUIZ.length) ) + '%';
+  }, 100);
+}
+
+/* =========================
+   SELECT OPTION
+   ========================= */
+function selectOption(btn){
+  if(!quizStarted) return;
+  if(btn.classList.contains('disabled')) return;
+  clearInterval(timer);
+
+  const selected = btn.dataset.letter;
+  const Q = QUESTIONS_FOR_QUIZ[currentIndex];
+  const timeUsed = Number((durationPerQuestion - timeRemaining).toFixed(2));
+  const correct = Q.answer;
+  let points = 0;
+
+  if(selected === correct){
+    if(timeUsed <= 1) points = 20;
+    else if(timeUsed <= 2) points = 19;
+    else if(timeUsed <= 3) points = 18;
+    else if(timeUsed <= 4) points = 17;
+    else if(timeUsed <= 5) points = 16;
+    else if(timeUsed <= 6) points = 15;
+    else if(timeUsed <= 7) points = 14;
+    else if(timeUsed <= 8) points = 13;
+    else if(timeUsed <= 9) points = 12;
+    else if(timeUsed <= 10) points = 11;
+    else if(timeUsed <= 11) points = 10;
+    else if(timeUsed <= 12) points = 9;
+    else if(timeUsed <= 13) points = 8;
+    else if(timeUsed <= 14) points = 7;
+    else if(timeUsed <= 15) points = 6;
+    else if(timeUsed <= 16) points = 5;
+    else if(timeUsed <= 17) points = 4;
+    else if(timeUsed <= 18) points = 3;
+    else if(timeUsed <= 19) points = 2;
+    else if(timeUsed <= 20) points = 1;
+    else points = 1;
+    state.right++;
+  } else {
+    points = 0;
+    state.wrong++;
+  }
+
+  state.score += points;
+  state.answered++;
+  state.details.push({i: currentIndex+1, selected, correct, timeUsed, points});
+
+// mark options
+  Array.from(el.options.children).forEach(o=>{
+    o.classList.add('disabled');
+    // if(o.dataset.letter === correct) o.classList.add('correct'); // DIHAPUS: agar jawaban benar tidak ditampilkan
+    if(o === btn && btn.dataset.letter !== correct) o.classList.add('wrong');
+  });
+
+  // update summary UI
+  el.score.textContent = state.score;
+  el.answeredCount.textContent = state.answered;
+  el.rightCount.textContent = state.right;
+  el.wrongCount.textContent = state.wrong;
+  el.avgTime.textContent = computeAvgTime();
+  el.nextBtn.disabled = false;
+  el.skipQ.disabled = true;
+  el.status.textContent = `Soal ${currentIndex+1} dijawab`;
+
+  // otomatis lanjut sedikit delay
+  setTimeout(()=>{
+    if(currentIndex < QUESTIONS_FOR_QUIZ.length - 1) showQuestion(currentIndex + 1);
+    else finishQuiz();
+  }, 600);
+}
+
+/* =========================
+   TIME UP POPUP HANDLER
+   ========================= */
+function showTimeUpModal(){
+  if(!quizStarted) return;
+  el.timeUpQIndex.textContent = currentIndex + 1;
+  el.timeUpModal.classList.remove('hidden');
+  el.timeUpModal.setAttribute('aria-hidden','false');
+  // Disabled semua tombol soal agar user fokus ke modal
+  el.skipQ.disabled = true;
+  Array.from(el.options.children).forEach(o=>{
+    o.classList.add('disabled');
+  });
+}
+
+function handleTimeUp(){
+  // Dipanggil setelah user klik "Lanjutkan" di modal Time Up
+  if(!quizStarted) return;
+  
+  el.timeUpModal.classList.add('hidden');
+  el.timeUpModal.setAttribute('aria-hidden','true');
+  
+  // Proses seperti soal yang salah/diskip saat waktu habis
+  state.answered++;
+  state.wrong++;
+  state.details.push({
+    i: currentIndex+1,
+    selected: 'WAKTU HABIS', // Ubah dari '-'
+    correct: QUESTIONS_FOR_QUIZ[currentIndex].answer,
+    timeUsed: Number(durationPerQuestion.toFixed(2)),
+    points: 0
+  });
+
+  el.answeredCount.textContent = state.answered;
+  el.wrongCount.textContent = state.wrong;
+  el.avgTime.textContent = computeAvgTime();
+  el.nextBtn.disabled = false;
+  el.skipQ.disabled = true; // Sudah diset di showTimeUpModal, tapi dipastikan lagi
+  el.status.textContent = `Waktu habis soal ${currentIndex+1}`;
+  
+  // Lanjut ke soal berikutnya atau selesai
+  setTimeout(()=>{
+    if(currentIndex < QUESTIONS_FOR_QUIZ.length - 1) showQuestion(currentIndex + 1);
+    else finishQuiz();
+  }, 400); 
+}
+
+function skipQuestion(){
+  if(!quizStarted) return;
+  clearInterval(timer);
+  state.answered++;
+  state.wrong++;
+  state.details.push({
+    i: currentIndex+1,
+    selected: 'SKIP',
+    correct: QUESTIONS_FOR_QUIZ[currentIndex].answer,
+    timeUsed: Number(durationPerQuestion.toFixed(2)),
+    points: 0
+  });
+
+  Array.from(el.options.children).forEach(o=>{
+    o.classList.add('disabled');
+  });
+
+  el.answeredCount.textContent = state.answered;
+  el.wrongCount.textContent = state.wrong;
+  el.avgTime.textContent = computeAvgTime();
+  el.nextBtn.disabled = false;
+  el.skipQ.disabled = true;
+  el.status.textContent = `Soal ${currentIndex+1} diskip`;
+
+  setTimeout(()=>{
+    if(currentIndex < QUESTIONS_FOR_QUIZ.length - 1) showQuestion(currentIndex + 1);
+    else finishQuiz();
+  }, 400);
+}
+
+/* =========================
+   NAVIGATION
+   ========================= */
+function nextQuestion(){ showQuestion(currentIndex+1); }
+function prevQuestion(){ showQuestion(currentIndex+1000); } 
+
+/* =========================
+   FINISH QUIZ (tampilkan modal nama lalu hasil)
+   ========================= */
+function finishQuiz(){
+  clearInterval(timer);
+  quizStarted = false;
+  el.startBtn.style.display = 'inline-block';
+  el.startFormQuizBtn.style.display = 'inline-block';
+  el.stopBtn.style.display = 'none';
+  setDarkMode(false); // Matikan Dark Mode
+  
+  // tampilkan modal input nama
+  el.nameModal.classList.remove('hidden');
+  el.nameModal.setAttribute('aria-hidden','false');
+  el.userNameInput.focus();
+}
+
+/* dipicu saat klik "Simpan" pada modal nama */
+function onSaveName(){
+  const name = (el.userNameInput.value || "").trim();
+  
+  // Pemeriksaan wajib isi nama hanya jika ini adalah mode Form Quiz
+  if(isFormQuiz && name.length === 0){
+      alert("Nama wajib diisi untuk mengirimkan skor.");
+      return;
+  }
+  
+  playerName = name || "Peserta";
+  el.playerName.textContent = playerName;
+  el.nameModal.classList.add('hidden');
+  el.nameModal.setAttribute('aria-hidden','true');
+
+  // tampilkan ringkasan hasil
+  el.endSummary.style.display = '';
+  el.qCard.style.display = 'none';
+  el.finalScore.textContent = state.score;
+  el.correctCount.textContent = `Benar: ${state.right} | Salah: ${state.wrong} | Total Soal: ${QUESTIONS_FOR_QUIZ.length}`;
+  el.finalAvgTime.textContent = computeAvgTime();
+
+  // isi tabel detail
+  el.detailTableBody.innerHTML = state.details.map(d=>{
+    return `<tr>
+      <td>${d.i}</td>
+      <td>${escapeHtml(String(d.selected))}</td>
+      <td>${escapeHtml(String(d.correct))}</td>
+      <td>${formatSec(d.timeUsed)}</td>
+      <td>${d.points}</td>
+    </tr>`;
+  }).join('');
+  
+  // LOGIKA TAMBAHAN UNTUK FORM QUIZ (Tampilkan Modal Kirim, tidak ada opsi batal)
+  if(isFormQuiz){
+      el.exportSuccessModal.classList.remove('hidden');
+      el.exportSuccessModal.setAttribute('aria-hidden', 'false');
+  }
+}
+
+function onCancelName(){
+  // Fungsi ini hanya akan terpicu jika ini adalah Quiz Biasa
+  playerName = "Peserta";
+  el.playerName.textContent = playerName;
+  el.nameModal.classList.add('hidden');
+  el.nameModal.setAttribute('aria-hidden','true');
+
+  el.endSummary.style.display = '';
+  el.qCard.style.display = 'none';
+  el.finalScore.textContent = state.score;
+  el.finalAvgTime.textContent = computeAvgTime();
+  el.detailTableBody.innerHTML = state.details.map(d=>{
+    return `<tr>
+      <td>${d.i}</td>
+      <td>${escapeHtml(String(d.selected))}</td>
+      <td>${escapeHtml(String(d.correct))}</td>
+      <td>${formatSec(d.timeUsed)}</td>
+      <td>${d.points}</td>
+    </tr>`;
+  }).join('');
+}
+
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* =========================
+   EXPORT CSV (termasuk nama + rata-rata)
+   ========================= */
+function exportCSV(){
+  const avg = computeAvgTime();
+  const header = ['Nama','Rata-rata waktu(s)','Skor total','No','Pilihan','Jawaban','Waktu(s)','Nilai'];
+  let rows = [];
+  if(state.details.length === 0){
+    rows.push([playerName, avg, state.score, '','','','','']);
+  } else {
+    state.details.forEach(d=>{
+      rows.push([playerName, avg, state.score, d.i, d.selected, d.correct, formatSec(d.timeUsed), d.points]);
+    });
+  }
+  const csv = [header.map(escapeCsvCell).join(',')].concat(rows.map(r=> r.map(escapeCsvCell).join(','))).join('\n');
+  const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'hasil_quiz_sirah.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function sendToGoogleForm(){
+  const baseURL = "https://docs.google.com/forms/d/e/1FAIpQLSfkxtyIzVkWLGmDUiD0MTWuTEFE6ICDq93AAET_wf1LHBJOxw/viewform?usp=pp_url";
+
+  const params = {
+    "entry.1926497183": playerName,               // nama
+    "entry.1963847581": state.score,             // skor
+    "entry.27901319": state.right,               // benar
+    "entry.422771954": state.wrong,              // salah
+    "entry.220410786": QUESTIONS_FOR_QUIZ.length, // total soal
+    "entry.253071901": computeAvgTime()          // rata-rata waktu
+  };
+
+  const queryString = Object.keys(params)
+    .map(k => `${encodeURIComponent(k)}=${encodeURIComponent(params[k])}`)
+    .join('&');
+
+  const fullURL = `${baseURL}&${queryString}`;
+  
+  // Buka tab baru dan otomatis tutup modal ekspor
+  window.open(fullURL, "_blank"); 
+  el.exportSuccessModal.classList.add('hidden');
+}
+
+/* =========================
+   EVENT LISTENERS
+   ========================= */
+el.startBtn.addEventListener('click', () => startQuiz(false)); // Quiz Biasa
+el.startFormQuizBtn.addEventListener('click', () => startQuiz(true)); // Quiz Kirim Form
+
+// Tambahkan listener untuk input nama agar tombol 'Simpan' aktif jika nama diisi (khusus mode Form Quiz)
+el.userNameInput.addEventListener('input', () => {
+    if (isFormQuiz) {
+        el.saveNameBtn.disabled = el.userNameInput.value.trim().length === 0;
+    }
+});
+
+
+el.stopBtn.addEventListener('click', ()=> {
+  // stop mid-quiz: treat as finish (but do not prompt modal twice)
+  if(quizStarted){
+    clearInterval(timer);
+    quizStarted = false;
+    el.startBtn.style.display = 'inline-block';
+    el.startFormQuizBtn.style.display = 'inline-block';
+    el.stopBtn.style.display = 'none';
+    setDarkMode(false); // Matikan Dark Mode
+    
+    // Langsung tampilkan modal input nama
+    el.nameModal.classList.remove('hidden');
+    el.nameModal.setAttribute('aria-hidden','false');
+    // Ulangi setup modal nama saat stop
+    if (isFormQuiz) {
+        el.cancelNameBtn.style.display = 'none';
+        el.saveNameBtn.disabled = el.userNameInput.value.trim().length === 0;
+    } else {
+        el.cancelNameBtn.style.display = 'inline-block';
+        el.saveNameBtn.disabled = false;
+    }
+  }
+});
+
+el.nextBtn.addEventListener('click', nextQuestion);
+el.prevQ.addEventListener('click', prevQuestion);
+el.skipQ.addEventListener('click', skipQuestion);
+el.retryBtn.addEventListener('click', ()=> location.reload());
+el.exportBtn.addEventListener('click', exportCSV);
+el.sendFormBtn.addEventListener('click', sendToGoogleForm);
+
+el.saveNameBtn.addEventListener('click', onSaveName);
+el.cancelNameBtn.addEventListener('click', onCancelName);
+el.continueTimeUpBtn.addEventListener('click', handleTimeUp); 
+
+// Listener untuk modal baru
+el.sendFormModalBtn.addEventListener('click', sendToGoogleForm);
+
+// Tombol tutup di modal ekspor dihilangkan dari tampilan, jadi listener ini tidak diperlukan lagi.
+// el.closeExportModalBtn.addEventListener('click', () => { ... });
+
+
+// keyboard support
+
+document.getElementById("rankingBtn").onclick = () => {
+  window.open(
+    "https://docs.google.com/spreadsheets/d/1oz-ViSQmvU-4T4am0CtNScSCB2Xud5ikigBlNGfaSw4/edit?resourcekey=&gid=1952636139",
+    "_blank"
+  );
+};
+
+
+document.addEventListener('keydown', (e)=>{
+  if(!quizStarted) return;
+  const k = e.key.toUpperCase();
+  if(['A','B','C','D'].includes(k)){
+    const btn = Array.from(el.options.children).find(x=>x.dataset.letter===k);
+    if(btn && !btn.classList.contains('disabled')) selectOption(btn);
+  }
+  if(k === 'N') nextQuestion();
+  if(k === 'S') skipQuestion();
+});
+
+/* init UI */
+el.timeLeft.textContent = '--';
+el.progressBar.style.width = '0%';
+el.totalSoalCount.textContent = QUESTIONS.length;
+el.maxSoalCount.textContent = QUESTIONS.length;
+el.maxSoalCountRight.textContent = QUESTIONS.length;
+setDarkMode(false); // Pastikan mode default adalah terang saat load
+</script>
+</body>
+</html>
